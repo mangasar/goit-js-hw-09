@@ -1,80 +1,88 @@
-import flatpickr from "flatpickr";
-import "flatpickr/dist/flatpickr.min.css";
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 
-const dateInput = document.querySelector("#datetime-picker")
+const refs = {
+  inputEl: document.querySelector('#datetime-picker'),
+  startBtn: document.querySelector('[data-start]'),
+  timerDiv: document.querySelector('.timer'),
+  dataDays: document.querySelector('[data-days]'),
+  dataHours: document.querySelector('[data-hours]'),
+  dataMinutes: document.querySelector('[data-minutes]'),
+  dataSeconds: document.querySelector('[data-seconds]'),
+};
+
+// БИБЛИОТЕКА //
 const options = {
   enableTime: true,
   time_24hr: true,
   defaultDate: new Date(),
   minuteIncrement: 1,
   onClose(selectedDates) {
-    const selectedDate = selectedDates[0];
-    const currentDate = new Date();
-    if (selectedDate < currentDate) {
-      startBtn.disabled = true; 
-      window.alert("Please choose a date in the future");
-    } else {
-      startBtn.disabled = false;
-    }
-    console.log(selectedDate);
+    console.log(selectedDates[0]);
+    validDate();
   },
 };
 
-const pickrTime = flatpickr(dateInput, options);
-const startBtn = document.querySelector("[data-start]");
+const datePicker = flatpickr(refs.inputEl, options);
+let isActive = false;
+refs.startBtn.disabled = true;
 
-  class CountDownTimer {
-    constructor({selector, targetDate}) {
-      this.targetDate = targetDate,
-      this.daysSpan = document.querySelector(`${selector} [data-days]`)
-      this.hoursSpan = document.querySelector(`${selector} [data-hours]`)
-      this.minutesSpan = document.querySelector(`${selector} [data-minutes]`)
-      this.secondsSpan = document.querySelector(`${selector} [data-seconds]`)
-      
-      }
-      
-      updateMarkup() {
-        setInterval(() => {
-            const currentTime = Date.now();
-            const delta = this.targetDate - currentTime
-            const { days, hours, minutes, seconds } = this.convertMs(delta)
-            this.daysSpan.textContent = days
-            this.hoursSpan.textContent = hours
-            this.minutesSpan.textContent = minutes
-            this.secondsSpan.textContent = seconds
-            console.log("new interval")
-          }, 1000)
-        
-    
-      }
-    
-      convertMs(ms) {
-        const second = 1000;
-        const minute = second * 60;
-        const hour = minute * 60;
-        const day = hour * 24;
-      
-        const days = Math.floor(ms / day);
-        const hours = Math.floor((ms % day) / hour);
-        const minutes = Math.floor(((ms % day) % hour) / minute);
-        const seconds = Math.floor((((ms % day) % hour) % minute) / second);
-    
-      return { days, hours, minutes, seconds };
-      }
+function validDate() {
+  const now = new Date();
+  if (datePicker.selectedDates[0] < now) {
+    alert('Please choose a date in the future');
+    refs.startBtn.disabled = true;
+  }
+  refs.startBtn.disabled = false;
+  return;
+}
+
+refs.startBtn.addEventListener('click', () => {
+  if (isActive === true) {
+    return;
+  }
+
+  const intervalId = setInterval(() => {
+    isActive = true;
+    let kakoytoTime = datePicker.selectedDates[0] - Date.now();
+    const timeComponents = convertMs(kakoytoTime);
+    updateTimer(timeComponents);
+
+    if (kakoytoTime <= 1000) {
+      clearInterval(intervalId);
+      refs.timerDiv.textContent = '00:00:00:00';
+      return;
     }
-    
-    
-    
-    
-    startBtn.addEventListener("click", () => {
-      
-      const timer = new CountDownTimer({
-        selector: ".timer",
-        targetDate: pickrTime.selectedDates[0],
-      })
-      startBtn.disabled = true;
-      timer.updateMarkup();
-      
-    })
+  }, 1000);
+});
 
+// ФУНКЦИЯ ОТСЧЕТ ВРЕМЕНИ //
+function convertMs(ms) {
+  // Number of milliseconds per unit of time
+  const second = 1000;
+  const minute = second * 60;
+  const hour = minute * 60;
+  const day = hour * 24;
+
+  // Remaining days
+  const days = pad(Math.floor(ms / day));
+  // Remaining hours
+  const hours = pad(Math.floor((ms % day) / hour));
+  // Remaining minutes
+  const minutes = pad(Math.floor(((ms % day) % hour) / minute));
+  // Remaining seconds
+  const seconds = pad(Math.floor((((ms % day) % hour) % minute) / second));
+
+  return { days, hours, minutes, seconds };
+}
+
+// ФУНКЦИЯ PAD //
+function pad(value) {
+  return String(value).padStart(2, '0');
+}
+
+/////
+function updateTimer({ days, hours, minutes, seconds }) {
+  refs.timerDiv.textContent = `${days}:${hours}:${minutes}:${seconds}`;
+}
 
